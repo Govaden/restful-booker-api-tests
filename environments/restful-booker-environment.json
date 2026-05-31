@@ -1,0 +1,28 @@
+{
+	"id": "19d36010-9e6b-414b-b731-5ecf555da318",
+	"name": "restful-booker",
+	"values": [
+		{
+			"key": "base_Url",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "any",
+			"enabled": true
+		},
+		{
+			"key": "bookingId",
+			"value": "",
+			"type": "any",
+			"enabled": true
+		}
+	],
+	"color": 120,
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2026-05-31T15:18:45.321Z",
+	"_postman_exported_using": "Postman/12.12.6"
+}
