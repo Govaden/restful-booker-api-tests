@@ -28,3 +28,28 @@ Postman collection covering full CRUD operations for the
 | `baseUrl` | API base URL | Manual |
 | `authToken` | Session token | POST /auth |
 | `bookingId` | Created booking ID | POST /booking |
+
+## How to work with Newman
+
+### Resources
+
+- [Node.js](https://nodejs.org) (LTS version)
+- [Newman](https://www.npmjs.com/package/newman) — Postman's CLI runner
+
+### Install Newman
+
+```bash
+npm install -g newman
+```
+
+### Basic Run
+
+```bash
+newman run collections/restful-booker-collection.json -e environments/restful-booker-environment.json
+```
+
+### Run with Delay (recommended — gives the API time between requests)
+
+```bash
+newman run collections/restful-booker-collection.json -e environments/restful-booker-environment.json --delay-request 500
+```
