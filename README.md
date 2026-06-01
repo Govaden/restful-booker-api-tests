@@ -45,11 +45,11 @@ npm install -g newman
 ### Basic Run
 
 ```bash
-newman run collections/restful-booker-collection.json -e environments/restful-booker-environment.json
+newman run postman/restful-booker-collection.json -e postman/restful-booker-environment.json
 ```
 
 ### Run with Delay (recommended — gives the API time between requests)
 
 ```bash
-newman run collections/restful-booker-collection.json -e environments/restful-booker-environment.json --delay-request 500
+newman run postman/restful-booker-collection.json -e postman/restful-booker-environment.json --delay-request 500
 ```
