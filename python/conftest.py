@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 import requests
 import pytest
 
@@ -12,3 +14,10 @@ def auth_token(base_url):
     token = response.json().get("token")
     assert token, "Token not found in response"
     return token
+
+@pytest.fixture
+def booking_dates():
+    return {
+        "checkin": (date.today() + timedelta(days=7)).isoformat(),
+        "checkout": (date.today() + timedelta(days=14)).isoformat()
+    }
