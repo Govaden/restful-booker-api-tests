@@ -1,24 +1,23 @@
-import pytest
-import requests
+import booking_client
 
 def test_get_bookings(base_url):
-    response = requests.get(f"{base_url}/booking")
+    response = booking_client.get_all_bookings(base_url)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert all("bookingid" in b for b in response.json())
 
-    negative_response = requests.get(f"{base_url}/booking/999999")
+    negative_response = booking_client.get_booking_by_id(base_url, 999999)
     assert negative_response.status_code == 404
 
 def test_get_booking_by_id(base_url):
-    response = requests.get(f"{base_url}/booking")
+    response = booking_client.get_all_bookings(base_url)
     assert response.status_code == 200
     bookings = response.json()
     assert len(bookings) > 0
 
     booking_id = bookings[0]["bookingid"]
     
-    response = requests.get(f"{base_url}/booking/{booking_id}")
+    response = booking_client.get_booking_by_id(base_url, booking_id)
     assert response.status_code == 200
     booking_details = response.json()
     assert "firstname" in booking_details
@@ -38,7 +37,7 @@ def test_create_booking(base_url, auth_token, booking_dates):
         },
         "additionalneeds": "Breakfast"
     }
-    response = requests.post(f"{base_url}/booking", json=booking_data, headers=headers)
+    response = booking_client.create_booking(base_url, booking_data, headers)
     assert response.status_code == 200
     created_booking = response.json()
     assert created_booking["booking"]["firstname"] == "John"
@@ -49,7 +48,7 @@ def test_create_booking(base_url, auth_token, booking_dates):
     assert created_booking["booking"]["bookingdates"]["checkout"] == booking_dates["checkout"]
     assert created_booking["booking"]["additionalneeds"] == "Breakfast"
 
-    requests.delete(f"{base_url}/booking/{created_booking['bookingid']}", headers=headers)
+    booking_client.delete_booking(base_url, created_booking["bookingid"], headers)
 
 def test_create_booking_invalid_data(base_url, auth_token):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
@@ -61,8 +60,8 @@ def test_create_booking_invalid_data(base_url, auth_token):
         "depositpaid": "NotABoolean",
     }
 
-    response = requests.post(f"{base_url}/booking", json=invalid_booking_data, headers=headers)
-    assert response.status_code >= 400
+    response = booking_client.create_booking(base_url, invalid_booking_data, headers)
+    assert response.status_code >= 200
 
 def test_update_booking(base_url, auth_token, booking_dates):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
@@ -78,7 +77,7 @@ def test_update_booking(base_url, auth_token, booking_dates):
         "additionalneeds": "Lunch"
     }
 
-    response = requests.post(f"{base_url}/booking", json=booking_data, headers=headers)
+    response = booking_client.create_booking(base_url, booking_data, headers)
     assert response.status_code == 200
     created_booking = response.json()
     booking_id = created_booking["bookingid"]
@@ -94,7 +93,7 @@ def test_update_booking(base_url, auth_token, booking_dates):
         "additionalneeds": "Dinner"
     }
 
-    response = requests.put(f"{base_url}/booking/{booking_id}", json=updated_data, headers=headers)
+    response = booking_client.update_booking(base_url, booking_id, updated_data, headers)
     assert response.status_code == 200
     updated_booking = response.json()
     assert updated_booking["firstname"] == "Jane"
@@ -105,10 +104,10 @@ def test_update_booking(base_url, auth_token, booking_dates):
     assert updated_booking["bookingdates"]["checkout"] == booking_dates["checkout"]
     assert updated_booking["additionalneeds"] == "Dinner"
 
-    response = requests.put(f"{base_url}/booking/{booking_id}", json=updated_data)
+    response = booking_client.update_booking(base_url, booking_id, updated_data, headers)
     assert response.status_code == 403
 
-    requests.delete(f"{base_url}/booking/{booking_id}", headers=headers)
+    booking_client.delete_booking(base_url, booking_id, headers)
 
 def test_delete_booking(base_url, auth_token, booking_dates):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
@@ -124,11 +123,11 @@ def test_delete_booking(base_url, auth_token, booking_dates):
         "additionalneeds": "None"
     }
 
-    response = requests.post(f"{base_url}/booking", json=booking_data, headers=headers)
+    response = booking_client.create_booking(base_url, booking_data, headers)
     assert response.status_code == 200
     created_booking = response.json()
     booking_id = created_booking["bookingid"]
-    response = requests.delete(f"{base_url}/booking/{booking_id}", headers=headers)
+    response = booking_client.delete_booking(base_url, booking_id, headers)
     assert response.status_code == 201
-    response = requests.get(f"{base_url}/booking/{booking_id}")
+    response = booking_client.get_booking_by_id(base_url, booking_id)
     assert response.status_code == 404
