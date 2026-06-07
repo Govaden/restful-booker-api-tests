@@ -14,3 +14,6 @@ def update_booking(base_url, booking_id, payload, headers):
 
 def delete_booking(base_url, booking_id, headers):
     return requests.delete(f"{base_url}/booking/{booking_id}", headers=headers)
+
+def partial_update_booking(base_url, booking_id, payload, headers):
+    return requests.patch(f"{base_url}/booking/{booking_id}", json=payload, headers=headers)
