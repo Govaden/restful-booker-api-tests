@@ -43,12 +43,12 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                 name: junit-results
-                path: reports/junit/results.xml
+                path: python/reports/junit/results.xml
 
             - name: Test report
               if: always()
               uses: dorny/test-reporter@v2
               with:
                 name: Test Results
-                path: reports/junit/results.xml
+                path: python/reports/junit/results.xml
                 reporter: java-junit
