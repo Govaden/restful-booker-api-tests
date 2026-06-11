@@ -17,6 +17,10 @@ jobs:
         name: Run API tests
         runs-on: ubuntu-latest
         timeout-minutes: 30
+        permissions:
+            contents: read
+            checks: write
+
         steps:
             - uses: actions/checkout@v4
 
@@ -33,3 +37,18 @@ jobs:
             - name: Run tests
               working-directory: python
               run: pytest -v   
+
+            - name: Upload JUnit results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                name: junit-results
+                path: reports/junit/results.xml
+
+            - name: Test report
+              if: always()
+              uses: dorny/test-reporter@v2
+              with:
+                name: Test Results
+                path: reports/junit/results.xml
+                reporter: java-junit
