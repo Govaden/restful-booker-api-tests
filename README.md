@@ -2,6 +2,8 @@
 
 A practice repository for learning and experimenting with API test automation using **Python**, **pytest**, and **requests** — as well as **Postman** — built against the [Restful-Booker API](https://restful-booker.herokuapp.com/apidoc/).
 
+![API Tests](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/api-tests.yml/badge.svg)
+
 ---
 
 ## 📌 About
