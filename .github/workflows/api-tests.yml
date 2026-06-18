@@ -11,6 +11,8 @@ on:
         paths-ignore:
             - 'postman/**'
             - '**.md'
+    schedule:
+      - cron: '0 4 * * *'
             
 jobs:
     run-tests:
