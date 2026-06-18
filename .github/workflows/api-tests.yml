@@ -12,7 +12,7 @@ on:
             - 'postman/**'
             - '**.md'
     schedule:
-      - cron: '0 4 * * *'
+            - cron: '0 4 * * *'
             
 jobs:
     run-tests:
