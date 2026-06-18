@@ -1,0 +1,10 @@
+# https://github.com/docker/awesome-compose
+services:
+  python-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./results:/app/results
+    environment:
+      PYTHONPATH: /app
