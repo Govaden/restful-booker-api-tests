@@ -1,0 +1,43 @@
+name: Newman
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    run-postman-tests:
+        name: Run Postman collection (Newman)
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: lts/*
+
+            - name: Install Newman and HTML reporter
+              run: npm install -g newman newman-reporter-htmlextra
+
+            - name: Run collection
+              run: |
+                mkdir -p newman
+                newman run postman/restful-booker-collection.json \
+                  -e postman/restful-booker-environment.json \
+                  --delay-request 500 \
+                  --reporters cli,json,htmlextra \
+                  --reporter-json-export newman/report.json \
+                  --reporter-htmlextra-export newman/report.html
+
+            - name: Upload Newman report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                name: newman-report
+                path: newman/
