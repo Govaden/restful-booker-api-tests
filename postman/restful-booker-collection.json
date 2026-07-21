@@ -126,7 +126,70 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"username\": \"admin\",\r\n    \"password\": \"password123\"\r\n}",
+          "raw": "{\r\n    \"username\": \"{{authUsername}}\",\r\n    \"password\": \"{{authPassword}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_Url}}/auth",
+          "host": [
+            "{{base_Url}}"
+          ],
+          "path": [
+            "auth"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST/auth - Invalid Credentials",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let response;\r",
+              "try {\r",
+              "    response = pm.response.json();\r",
+              "} catch (e) {\r",
+              "    response = undefined;\r",
+              "}\r",
+              "\r",
+              "pm.test(\"Status code is 200 (restful-booker returns 200 with a reason, not 401/403)\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response contains a rejection reason and no token\", function () {\r",
+              "    pm.expect(response).to.have.property(\"reason\");\r",
+              "    pm.expect(response).to.not.have.property(\"token\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Reason explains bad credentials\", function () {\r",
+              "    pm.expect(response.reason).to.match(/bad credentials/i);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"{{authUsername}}\",\r\n    \"password\": \"wrong-password\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -209,6 +272,65 @@
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"firstname\" : \"Jim\",\r\n    \"lastname\" : \"Brown\",\r\n    \"totalprice\" : 111,\r\n    \"depositpaid\" : true,\r\n    \"bookingdates\" : {\r\n        \"checkin\" : \"2018-01-01\",\r\n        \"checkout\" : \"2019-01-01\"\r\n    },\r\n    \"additionalneeds\" : \"Breakfast\"\r\n}"
+        },
+        "url": {
+          "raw": "{{base_Url}}/booking",
+          "host": [
+            "{{base_Url}}"
+          ],
+          "path": [
+            "booking"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST/booking - Malformed Body",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 500 (restful-booker known bug: invalid field types cause a server error instead of a 400)\", function () {\r",
+              "    pm.response.to.have.status(500);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"No new bookingid is returned for the malformed request\", function () {\r",
+              "    let response;\r",
+              "    try {\r",
+              "        response = pm.response.json();\r",
+              "    } catch (e) {\r",
+              "        response = undefined;\r",
+              "    }\r",
+              "    if (response) {\r",
+              "        pm.expect(response).to.not.have.property(\"bookingid\");\r",
+              "    }\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"firstname\" : \"Invalid\",\r\n    \"lastname\" : \"Booking\",\r\n    \"totalprice\" : \"NotANumber\",\r\n    \"depositpaid\" : \"NotABoolean\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
         "url": {
           "raw": "{{base_Url}}/booking",
@@ -345,6 +467,106 @@
             "type": "text"
           }
         ],
+        "url": {
+          "raw": "{{base_Url}}/booking/{{bookingId}}",
+          "host": [
+            "{{base_Url}}"
+          ],
+          "path": [
+            "booking",
+            "{{bookingId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET/booking/:id - Non-existent ID (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404 for a booking ID that does not exist\", function () {\r",
+              "    pm.response.to.have.status(404);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response time is under 2000ms\", function () {\r",
+              "    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_Url}}/booking/999999999",
+          "host": [
+            "{{base_Url}}"
+          ],
+          "path": [
+            "booking",
+            "999999999"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT/booking - No Auth (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 403 when no auth token is supplied\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response body is not the updated booking object\", function () {\r",
+              "    let isJson = true;\r",
+              "    let response;\r",
+              "    try { response = pm.response.json(); } catch (e) { isJson = false; }\r",
+              "    if (isJson) {\r",
+              "        pm.expect(response).to.not.have.property(\"firstname\");\r",
+              "    }\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"firstname\": \"NoAuth\",\r\n    \"lastname\": \"Attempt\",\r\n    \"totalprice\": 999,\r\n    \"depositpaid\": false,\r\n    \"bookingdates\": {\r\n        \"checkin\": \"2025-03-01\",\r\n        \"checkout\": \"2025-03-07\"\r\n    },\r\n    \"additionalneeds\": \"None\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
         "url": {
           "raw": "{{base_Url}}/booking/{{bookingId}}",
           "host": [
@@ -513,6 +735,49 @@
         "body": {
           "mode": "raw",
           "raw": "{\r\n    \"firstname\": \"Jane\",\r\n    \"totalprice\": 750\r\n}"
+        },
+        "url": {
+          "raw": "{{base_Url}}/booking/{{bookingId}}",
+          "host": [
+            "{{base_Url}}"
+          ],
+          "path": [
+            "booking",
+            "{{bookingId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE/booking - No Auth (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 403 when no auth token is supplied\", function () {\r",
+              "    pm.response.to.have.status(403);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Booking is not deleted (bookingId remains valid for the follow-up authenticated delete)\", function () {\r",
+              "    const bookingId = pm.environment.get(\"bookingId\");\r",
+              "    pm.expect(bookingId).to.be.a(\"string\");\r",
+              "    pm.expect(bookingId).to.not.equal(\"\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
         },
         "url": {
           "raw": "{{base_Url}}/booking/{{bookingId}}",
