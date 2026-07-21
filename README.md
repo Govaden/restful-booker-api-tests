@@ -198,6 +198,7 @@ The collection runs automatically on every push/PR to `main` via [`.github/workf
 | `PATCH/booking` | PATCH /booking/:id | Positive — partial update with auth |
 | `DELETE/booking - No Auth (403)` | DELETE /booking/:id | Negative — missing auth token (403) |
 | `DELETE/booking` | DELETE /booking/:id | Positive — deletes the booking |
+| `GET/booking/:id - Verify Deletion (404)` | GET /booking/:id | Positive — confirms the booking is gone after delete |
 
 ---
 
