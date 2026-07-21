@@ -1,22 +1,16 @@
-# 🔖 restful-booker-api-tests
+# restful-booker-api-tests
 
-A practice repository for learning and experimenting with API test automation using **Python**, **pytest**, and **requests** — as well as **Postman** — built against the [Restful-Booker API](https://restful-booker.herokuapp.com/apidoc/).
+[![API Tests](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/api-tests.yml/badge.svg)](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/api-tests.yml)
+[![Newman](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/newman.yml/badge.svg)](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/newman.yml)
 
-![API Tests](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/api-tests.yml/badge.svg)
-![Newman](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/newman.yml/badge.svg)
-
----
-
-## 📌 About
-
-This repo contains two parallel implementations of the same API test suite covering full CRUD operations, authentication, and negative cases:
+API test automation built against the [Restful-Booker API](https://restful-booker.herokuapp.com/apidoc/). Two parallel implementations of the same suite cover full CRUD operations, authentication, and negative cases:
 
 - **Python** (`python/`) — pytest + requests with a dedicated HTTP client module, shared fixtures, and documented API defects
 - **Postman** (`postman/`) — a collection with environment variables, runnable via Collection Runner or Newman CLI
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 restful-booker-api-tests/
@@ -36,14 +30,14 @@ restful-booker-api-tests/
 │   ├── restful-booker-collection.json
 │   └── restful-booker-environment.json
 ├── .github/workflows/
-│   ├── api-tests.yml        # Python pytest CI
-│   └── newman.yml           # Postman/Newman CI
+│   ├── api-tests.yml       # Python pytest CI
+│   └── newman.yml          # Postman/Newman CI
 └── README.md
 ```
 
 ---
 
-## ⚙️ Setup — Python
+## Setup — Python
 
 **1. Clone the repo**
 ```bash
@@ -67,7 +61,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🐳 Setup — Docker (no local Python required)
+## Setup — Docker (no local Python required)
 
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running.
 
@@ -75,7 +69,7 @@ The Docker build context is scoped to the `python/` folder only, so the `postman
 
 ---
 
-## ▶️ Running Tests — Python
+## Running Tests — Python
 
 Run all tests:
 ```bash
@@ -89,10 +83,9 @@ python -m pytest tests/test_bookings.py::test_create_booking
 
 ---
 
-## ▶️ Running Tests — Docker
+## Running Tests — Docker
 
 From inside the `python/` folder:
-
 ```bash
 cd python
 docker compose up --build
@@ -105,8 +98,6 @@ To see full build output:
 docker compose build --progress=plain
 ```
 
-**Test reports:** after a run, HTML/JUnit reports are available in `python/results/` the host machine — the container writes them there via a mounted volume, so they persist after the container exits.
-
 **Running without Compose:**
 ```bash
 cd python
@@ -116,37 +107,7 @@ docker run --rm -v "$(pwd)/results:/app/results" booker-python-tests
 
 ---
 
-## 📋 Python Test Coverage
-
-| Test | Endpoint | Scenario |
-|---|---|---|
-| `test_get_bookings` | GET /booking | Positive + invalid ID |
-| `test_get_booking_by_id` | GET /booking/:id | Positive |
-| `test_get_bookings_filter_by_name` | GET /booking?firstname=&lastname= | Query params |
-| `test_create_booking` | POST /booking | Positive |
-| `test_create_booking_invalid_data` | POST /booking | Invalid payload |
-| `test_update_booking` | PUT /booking/:id | Positive |
-| `test_update_booking_invalid_data` | PUT /booking/:id | No auth |
-| `test_partial_update_booking` | PATCH /booking/:id | Positive |
-| `test_delete_booking` | DELETE /booking/:id | Positive + deletion verification |
-| `test_delete_booking_without_auth` | DELETE /booking/:id | No auth |
-
----
-
-## 🐛 Known API Behaviour
-
-Restful-booker is an intentionally buggy sandbox. Tests assert on actual responses and include inline comments where a production API would behave differently:
-
-| Scenario | Expected | Actual |
-|---|---|---|
-| PUT without auth | 403 | 200 |
-| DELETE without auth | 403 | 201 |
-| POST successful create | 201 | 200 |
-| POST with invalid field types | 400 | 500 |
-
----
-
-## 📮 Running Tests — Postman
+## Running Tests — Postman
 
 1. Open Postman → **Import**
 2. Import `postman/restful-booker-collection.json`
@@ -155,8 +116,7 @@ Restful-booker is an intentionally buggy sandbox. Tests assert on actual respons
 5. Run **POST /auth** first to generate a token
 6. Run the full collection via Collection Runner
 
-### Newman (CLI)
-
+**Newman (CLI):**
 ```bash
 npm install -g newman
 newman run postman/restful-booker-collection.json \
@@ -175,13 +135,24 @@ newman run postman/restful-booker-collection.json \
   --reporter-htmlextra-export newman/report.html
 ```
 
-### CI
-
-The collection runs automatically on every push/PR to `main` via [`.github/workflows/newman.yml`](.github/workflows/newman.yml). The JSON and HTML reports are uploaded as a `newman-report` workflow artifact.
-
 ---
 
-## 📋 Postman Test Coverage
+## Test Coverage — Python
+
+| Test | Endpoint | Scenario |
+|---|---|---|
+| `test_get_bookings` | GET /booking | Positive + invalid ID |
+| `test_get_booking_by_id` | GET /booking/:id | Positive |
+| `test_get_bookings_filter_by_name` | GET /booking?firstname=&lastname= | Query params |
+| `test_create_booking` | POST /booking | Positive |
+| `test_create_booking_invalid_data` | POST /booking | Invalid payload |
+| `test_update_booking` | PUT /booking/:id | Positive |
+| `test_update_booking_invalid_data` | PUT /booking/:id | No auth |
+| `test_partial_update_booking` | PATCH /booking/:id | Positive |
+| `test_delete_booking` | DELETE /booking/:id | Positive + deletion verification |
+| `test_delete_booking_without_auth` | DELETE /booking/:id | No auth |
+
+## Test Coverage — Postman
 
 | Request | Endpoint | Scenario |
 |---|---|---|
@@ -202,7 +173,32 @@ The collection runs automatically on every push/PR to `main` via [`.github/workf
 
 ---
 
-## 📦 Dependencies
+## Known API Behaviour
+
+Restful-booker has a few known bugs. Tests assert on what it actually returns, with comments noting where a real API would differ:
+
+| Scenario | Expected | Actual |
+|---|---|---|
+| PUT without auth | 403 | 200 |
+| DELETE without auth | 403 | 201 |
+| POST successful create | 201 | 200 |
+| POST with invalid field types | 400 | 500 |
+
+It's also sometimes slow, which can show up as a false `403` on a valid authenticated request. Reruns fix it — not a test bug.
+
+---
+
+## Reports & Artifacts
+
+| Suite | Artifact | Location |
+|---|---|---|
+| Python (CI) | JUnit XML | `python/reports/junit/results.xml`, uploaded as the `junit-results` workflow artifact and rendered as a Checks-tab summary |
+| Python (Docker) | HTML/JUnit | `python/results/` on the host, via a mounted volume |
+| Postman (CI) | JSON + HTML (htmlextra) | uploaded as the `newman-report` workflow artifact |
+
+---
+
+## Dependencies
 
 | Package | Version |
 |---|---|
@@ -211,7 +207,16 @@ The collection runs automatically on every push/PR to `main` via [`.github/workf
 
 ---
 
-## 📚 Resources
+## Continuous Integration
+
+GitHub Actions runs both suites independently:
+
+- [`api-tests.yml`](.github/workflows/api-tests.yml) — Python/pytest suite, on every push/PR to `main` plus a nightly scheduled run
+- [`newman.yml`](.github/workflows/newman.yml) — Postman collection via Newman, on every push/PR to `main`
+
+---
+
+## Resources
 
 - [Restful-Booker API — Docs](https://restful-booker.herokuapp.com/apidoc/)
 - [pytest — Official Docs](https://docs.pytest.org/)
