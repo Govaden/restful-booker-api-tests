@@ -3,6 +3,7 @@
 A practice repository for learning and experimenting with API test automation using **Python**, **pytest**, and **requests** — as well as **Postman** — built against the [Restful-Booker API](https://restful-booker.herokuapp.com/apidoc/).
 
 ![API Tests](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/api-tests.yml/badge.svg)
+![Newman](https://github.com/Govaden/restful-booker-api-tests/actions/workflows/newman.yml/badge.svg)
 
 ---
 
@@ -34,6 +35,9 @@ restful-booker-api-tests/
 ├── postman/
 │   ├── restful-booker-collection.json
 │   └── restful-booker-environment.json
+├── .github/workflows/
+│   ├── api-tests.yml        # Python pytest CI
+│   └── newman.yml           # Postman/Newman CI
 └── README.md
 ```
 
@@ -112,7 +116,7 @@ docker run --rm -v "$(pwd)/results:/app/results" booker-python-tests
 
 ---
 
-## 📋 Test Coverage
+## 📋 Python Test Coverage
 
 | Test | Endpoint | Scenario |
 |---|---|---|
@@ -159,6 +163,41 @@ newman run postman/restful-booker-collection.json \
   -e postman/restful-booker-environment.json \
   --delay-request 500
 ```
+
+With the HTML/JSON report (same reporter used in CI):
+```bash
+npm install -g newman newman-reporter-htmlextra
+newman run postman/restful-booker-collection.json \
+  -e postman/restful-booker-environment.json \
+  --delay-request 500 \
+  --reporters cli,json,htmlextra \
+  --reporter-json-export newman/report.json \
+  --reporter-htmlextra-export newman/report.html
+```
+
+### CI
+
+The collection runs automatically on every push/PR to `main` via [`.github/workflows/newman.yml`](.github/workflows/newman.yml). The JSON and HTML reports are uploaded as a `newman-report` workflow artifact.
+
+---
+
+## 📋 Postman Test Coverage
+
+| Request | Endpoint | Scenario |
+|---|---|---|
+| `GET/ping` | GET /ping | Health check |
+| `POST/auth` | POST /auth | Positive — valid credentials, token issued |
+| `POST/auth - Invalid Credentials` | POST /auth | Negative — wrong password (no token issued) |
+| `POST/booking` | POST /booking | Positive — creates a booking |
+| `POST/booking - Malformed Body` | POST /booking | Negative — invalid field types (500) |
+| `GET/booking` | GET /booking | Positive — lists all bookings |
+| `GET/booking/:id` | GET /booking/:id | Positive — fetches a known booking |
+| `GET/booking/:id - Non-existent ID (404)` | GET /booking/:id | Negative — unknown booking ID (404) |
+| `PUT/booking - No Auth (403)` | PUT /booking/:id | Negative — missing auth token (403) |
+| `PUT/booking` | PUT /booking/:id | Positive — full update with auth |
+| `PATCH/booking` | PATCH /booking/:id | Positive — partial update with auth |
+| `DELETE/booking - No Auth (403)` | DELETE /booking/:id | Negative — missing auth token (403) |
+| `DELETE/booking` | DELETE /booking/:id | Positive — deletes the booking |
 
 ---
 
