@@ -16,7 +16,10 @@ API test automation built against the [Restful-Booker API](https://restful-booke
 restful-booker-api-tests/
 ├── python/
 │   ├── booking_client.py   # HTTP wrapper functions for all endpoints
-│   ├── conftest.py         # shared fixtures: base_url, auth_token, booking_dates
+│   ├── conftest.py         # shared fixtures: base_url, auth_token, booking_dates, db_conn
+│   ├── db/
+│   │   ├── schema.sql      # SQLite bookings table definition
+│   │   └── seed.py         # CLI script to seed a local bookings.db (git-ignored)
 │   ├── pytest.ini          # test discovery config
 │   ├── requirements.txt    # pinned dependencies
 │   ├── Dockerfile          # builds the test runner image
@@ -25,7 +28,9 @@ restful-booker-api-tests/
 │   ├── results/            # test reports land here after a Docker run (git-ignored)
 │   └── tests/
 │       ├── __init__.py
-│       └── test_bookings.py
+│       ├── test_bookings.py
+│       ├── test_db_validation.py   # API-created booking reconciled against a mirrored SQLite row
+│       └── test_db_aggregates.py   # COUNT/AVG/GROUP BY assertions against a seeded SQLite dataset
 ├── postman/
 │   ├── restful-booker-collection.json
 │   └── restful-booker-environment.json
@@ -151,6 +156,17 @@ newman run postman/restful-booker-collection.json \
 | `test_partial_update_booking` | PATCH /booking/:id | Positive |
 | `test_delete_booking` | DELETE /booking/:id | Positive + deletion verification |
 | `test_delete_booking_without_auth` | DELETE /booking/:id | No auth |
+
+## Test Coverage — Python (SQLite DB)
+
+Pure-DB tests against an in-memory SQLite connection (`db_conn` fixture, schema from `python/db/schema.sql`). No live API calls except where noted.
+
+| Test | Scenario |
+|---|---|
+| `test_booking_reconciles_with_db` | Creates a booking via the live API, mirrors it into SQLite, and asserts the read-back row matches the API response field-for-field |
+| `test_count_bookings_per_date_range` | `COUNT(*) ... WHERE checkin BETWEEN ? AND ?` against a seeded multi-booking dataset, per month and full range |
+| `test_avg_totalprice` | `AVG(totalprice)` over all seeded bookings |
+| `test_group_by_depositpaid` | `GROUP BY depositpaid` count and average totalprice per group |
 
 ## Test Coverage — Postman
 
