@@ -18,7 +18,7 @@ restful-booker-api-tests/
 │   ├── booking_client.py   # HTTP wrapper functions for all endpoints
 │   ├── conftest.py         # shared fixtures: base_url, auth_token, booking_dates, db_conn
 │   ├── db/
-│   │   ├── schema.sql      # SQLite bookings table definition
+│   │   ├── schema.sql      # SQLite bookings and booking_needs table definitions
 │   │   └── seed.py         # CLI script to seed a local bookings.db (git-ignored)
 │   ├── pytest.ini          # test discovery config
 │   ├── requirements.txt    # pinned dependencies
@@ -30,7 +30,8 @@ restful-booker-api-tests/
 │       ├── __init__.py
 │       ├── test_bookings.py
 │       ├── test_db_validation.py   # API-created booking reconciled against a mirrored SQLite row
-│       └── test_db_aggregates.py   # COUNT/AVG/GROUP BY assertions against a seeded SQLite dataset
+│       ├── test_db_aggregates.py   # COUNT/AVG/GROUP BY assertions against a seeded SQLite dataset
+│       └── test_db_joins.py        # INNER/LEFT JOIN and JOIN + GROUP BY assertions across bookings and booking_needs
 ├── postman/
 │   ├── restful-booker-collection.json
 │   └── restful-booker-environment.json
@@ -167,6 +168,10 @@ Pure-DB tests against an in-memory SQLite connection (`db_conn` fixture, schema 
 | `test_count_bookings_per_date_range` | `COUNT(*) ... WHERE checkin BETWEEN ? AND ?` against a seeded multi-booking dataset, per month and full range |
 | `test_avg_totalprice` | `AVG(totalprice)` over all seeded bookings |
 | `test_group_by_depositpaid` | `GROUP BY depositpaid` count and average totalprice per group |
+| `test_booking_needs_reconcile_with_db` | Creates a booking with `additionalneeds` via the live API, mirrors it into `bookings` and `booking_needs` (split on commas), and asserts an `INNER JOIN` returns the same needs as the API |
+| `test_bookings_without_needs` | `LEFT JOIN ... WHERE n.id IS NULL` finds bookings that have no needs |
+| `test_count_needs_per_booking` | `LEFT JOIN` + `COUNT` + `GROUP BY` per booking on a seeded dataset |
+| `test_sum_totalprice_per_need` | `JOIN` + `SUM(totalprice)` + `GROUP BY need` on a seeded dataset |
 
 ## Test Coverage — Postman
 
