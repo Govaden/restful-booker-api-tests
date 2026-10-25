@@ -10,3 +10,10 @@ CREATE TABLE IF NOT EXISTS bookings (
     CHECK (date(checkout) IS NOT NULL),
     CHECK (checkout >= checkin)
 );
+
+CREATE TABLE IF NOT EXISTS booking_needs (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    booking_id INTEGER NOT NULL,
+    need       TEXT    NOT NULL,
+    UNIQUE (booking_id, need)
+);
