@@ -28,7 +28,8 @@ restful-booker-api-tests/
 │   ├── Dockerfile          # builds the test runner image
 │   ├── .dockerignore
 │   ├── compose.yaml        # docker compose service for one-command test runs
-│   ├── results/            # test reports land here after a Docker run (git-ignored)
+│   ├── reports/            # JUnit XML from pytest runs, including Docker runs with the reports mount (git-ignored)
+│   ├── results/            # created empty by the compose volume mount; nothing is written to it (git-ignored)
 │   └── tests/
 │       ├── __init__.py
 │       ├── test_bookings.py
@@ -102,7 +103,12 @@ cd python
 docker compose up --build
 ```
 
-This builds the image, runs the full pytest suite inside a container, and prints results to your terminal.
+This builds the image, runs the full pytest suite inside a container, and prints results to your terminal. The JUnit XML report is written inside the container only.
+
+To also get the JUnit XML report on the host at `python/reports/junit/results.xml`, mount the reports folder:
+```bash
+docker compose run --rm --build -v ./reports:/app/reports python-tests
+```
 
 To see full build output:
 ```bash
@@ -113,8 +119,10 @@ docker compose build --progress=plain
 ```bash
 cd python
 docker build -t booker-python-tests .
-docker run --rm -v "$(pwd)/results:/app/results" booker-python-tests
+docker run --rm -v "$(pwd)/reports:/app/reports" booker-python-tests
 ```
+
+In Git Bash on Windows, prefix the commands that use `-v` with `MSYS_NO_PATHCONV=1` so the container path is not rewritten.
 
 ---
 
@@ -269,7 +277,7 @@ It's also sometimes slow, which can show up as a false `403` on a valid authenti
 | Suite | Artifact | Location |
 |---|---|---|
 | Python (CI) | JUnit XML | `python/reports/junit/results.xml`, uploaded as the `junit-results` workflow artifact and rendered as a Checks-tab summary |
-| Python (Docker) | HTML/JUnit | `python/results/` on the host, via a mounted volume |
+| Python (Docker) | JUnit XML | `python/reports/junit/results.xml` on the host when run with the reports mount (see [Running Tests — Docker](#running-tests--docker)); otherwise it stays inside the container |
 | Postman (CI) | JSON + HTML (htmlextra) | uploaded as the `newman-report` workflow artifact |
 
 ---
