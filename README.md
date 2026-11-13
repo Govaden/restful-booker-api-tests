@@ -5,7 +5,7 @@
 
 API test automation built against the [Restful-Booker API](https://restful-booker.herokuapp.com/apidoc/). Two parallel implementations of the same suite cover full CRUD operations, authentication, and negative cases:
 
-- **Python** (`python/`) — pytest + requests with a dedicated HTTP client module, shared fixtures, and documented API defects
+- **Python** (`python/`) — pytest + requests with a dedicated HTTP client module, shared fixtures, documented API defects, and response bodies validated against an OpenAPI specification
 - **Postman** (`postman/`) — a collection with environment variables, runnable via Collection Runner or Newman CLI
 
 ---
@@ -20,6 +20,9 @@ restful-booker-api-tests/
 │   ├── db/
 │   │   ├── schema.sql      # SQLite bookings and booking_needs table definitions
 │   │   └── seed.py         # CLI script to seed a local bookings.db (git-ignored)
+│   ├── openapi/
+│   │   └── restful-booker.yaml   # OpenAPI 3.1 spec of the API's observed behaviour
+│   ├── schema_validation.py      # loads the spec and validates response bodies against its schemas
 │   ├── pytest.ini          # test discovery config
 │   ├── requirements.txt    # pinned dependencies
 │   ├── Dockerfile          # builds the test runner image
@@ -31,7 +34,9 @@ restful-booker-api-tests/
 │       ├── test_bookings.py
 │       ├── test_db_validation.py   # API-created booking reconciled against a mirrored SQLite row
 │       ├── test_db_aggregates.py   # COUNT/AVG/GROUP BY assertions against a seeded SQLite dataset
-│       └── test_db_joins.py        # INNER/LEFT JOIN and JOIN + GROUP BY assertions across bookings and booking_needs
+│       ├── test_db_joins.py        # INNER/LEFT JOIN and JOIN + GROUP BY assertions across bookings and booking_needs
+│       ├── test_openapi_spec.py    # the spec passes openapi-spec-validator and its schemas are valid JSON Schema 2020-12
+│       └── test_schema_validation.py   # offline checks of the schema helper with static response bodies
 ├── postman/
 │   ├── restful-booker-collection.json
 │   └── restful-booker-environment.json
@@ -158,6 +163,26 @@ newman run postman/restful-booker-collection.json \
 | `test_delete_booking` | DELETE /booking/:id | Positive + deletion verification |
 | `test_delete_booking_without_auth` | DELETE /booking/:id | No auth |
 
+Five of these tests also validate the response body against a schema from the OpenAPI spec: `test_get_bookings` (`BookingList`), `test_get_booking_by_id` (`Booking`), `test_create_booking` (`CreatedBooking`), `test_update_booking` (`Booking`) and `test_partial_update_booking` (`Booking`).
+
+## Test Coverage — Python (OpenAPI spec and schema helper)
+
+Offline tests. No live API calls.
+
+| Test | Scenario |
+|---|---|
+| `test_openapi_spec_is_valid` | The spec file passes `openapi-spec-validator` |
+| `test_spec_uses_json_schema_2020_12_dialect` | The spec declares the JSON Schema 2020-12 dialect that the helper validates with |
+| `test_component_schema_is_valid_json_schema` | Each schema under `components/schemas` is a valid JSON Schema 2020-12 schema (one case per schema) |
+| `test_valid_booking_passes` | A complete booking body matches `Booking` |
+| `test_booking_without_optional_field_passes` | A booking without `additionalneeds` matches `Booking` |
+| `test_booking_with_wrong_type_fails` | A string `totalprice` fails and the message names the field |
+| `test_booking_missing_required_field_fails` | A booking without `lastname` fails |
+| `test_nested_reference_is_validated` | A `CreatedBooking` whose nested `bookingdates` lacks `checkout` fails at the nested path |
+| `test_valid_created_booking_passes` | A complete create response matches `CreatedBooking` |
+| `test_booking_list_with_wrong_item_fails` | A non-integer `bookingid` in a list fails at its index |
+| `test_unknown_schema_name_fails` | An unknown schema name raises a clear error |
+
 ## Test Coverage — Python (SQLite DB)
 
 Pure-DB tests against an in-memory SQLite connection (`db_conn` fixture, schema from `python/db/schema.sql`). No live API calls except where noted.
@@ -194,6 +219,26 @@ Pure-DB tests against an in-memory SQLite connection (`db_conn` fixture, schema 
 
 ---
 
+## API Specification
+
+[`python/openapi/restful-booker.yaml`](python/openapi/restful-booker.yaml) is an OpenAPI 3.1 specification of the endpoints this suite tests: `POST /auth`, `GET /booking`, `GET /booking/{id}`, `POST /booking`, `PUT /booking/{id}`, `PATCH /booking/{id}` and `DELETE /booking/{id}`.
+
+It describes the API's actual behaviour as observed against the live API, not idealised REST behaviour. Where the API differs from REST conventions, the operation's description says so, and the quirk is listed under [Known API Behaviour](#known-api-behaviour).
+
+It lives in `python/` so that local runs, CI (working directory `python/`) and the Docker image (build context `python/`) can all read it.
+
+To view it, open [Swagger Editor](https://editor.swagger.io/) and paste the file's contents, or import the file.
+
+### How schema validation works
+
+- [`python/schema_validation.py`](python/schema_validation.py) loads the spec once and caches it.
+- `assert_matches_schema(body, "Booking")` validates a parsed JSON body against `#/components/schemas/Booking`, resolving any `$ref` to other component schemas.
+- The spec sets `jsonSchemaDialect` to JSON Schema 2020-12, and the helper validates with `jsonschema`'s `Draft202012Validator`, so both use the same dialect.
+- On a mismatch the test fails with an `AssertionError` that lists every error with its JSON path, for example `Booking: $.totalprice: '150' is not of type 'integer', 'null'`.
+- `format` keywords are not enforced; the date fields are typed as plain strings because the API can return `0NaN-aN-aN` (see below).
+
+---
+
 ## Known API Behaviour
 
 Restful-booker has a few known bugs. Tests assert on what it actually returns, with comments noting where a real API would differ:
@@ -204,6 +249,16 @@ Restful-booker has a few known bugs. Tests assert on what it actually returns, w
 | DELETE without auth | 403 | 201 |
 | POST successful create | 201 | 200 |
 | POST with invalid field types | 400 | 500 |
+| POST /auth with wrong credentials | 401 | 200 with `{"reason": "Bad credentials"}` |
+| POST without `bookingdates` | 400 | 500 |
+| POST with non-numeric `totalprice` and `bookingdates` present | 400 | 200, `totalprice` saved as `null` |
+| POST with string `depositpaid` and `bookingdates` present | 400 | 200, `depositpaid` saved as `true` |
+| POST with decimal `totalprice` | 400 or value kept | 200, saved as an integer (150.5 → 150) |
+| GET /booking/:id or POST /booking without an Accept header | 200 | 418 |
+| PUT without `additionalneeds` | field cleared | previous value kept |
+| PATCH with only `bookingdates.checkin` | `checkout` unchanged | `checkout` becomes `0NaN-aN-aN` |
+| DELETE successful | 200 or 204 | 201 with plain-text `Created` |
+| DELETE an already-deleted booking | 404 | 405 |
 
 It's also sometimes slow, which can show up as a false `403` on a valid authenticated request. Reruns fix it — not a test bug.
 
@@ -225,6 +280,9 @@ It's also sometimes slow, which can show up as a false `403` on a valid authenti
 |---|---|
 | pytest | 8.3.5 |
 | requests | 2.32.3 |
+| jsonschema | 4.26.0 |
+| PyYAML | 6.0.3 |
+| openapi-spec-validator | 0.9.0 |
 
 ---
 
