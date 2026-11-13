@@ -1,10 +1,12 @@
 import booking_client
+from schema_validation import assert_matches_schema
 
 def test_get_bookings(base_url):
     response = booking_client.get_all_bookings(base_url)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert all("bookingid" in b for b in response.json())
+    assert_matches_schema(response.json(), "BookingList")
 
     negative_response = booking_client.get_booking_by_id(base_url, 999999)
     assert negative_response.status_code == 404
@@ -23,6 +25,7 @@ def test_get_booking_by_id(base_url):
     assert "firstname" in booking_details
     assert "lastname" in booking_details
     assert "bookingdates" in booking_details
+    assert_matches_schema(booking_details, "Booking")
 
 def test_get_bookings_filter_by_name(base_url, auth_token, booking_dates):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
@@ -65,6 +68,7 @@ def test_create_booking(base_url, auth_token, booking_dates):
     assert created_booking["booking"]["bookingdates"]["checkin"] == booking_dates["checkin"]
     assert created_booking["booking"]["bookingdates"]["checkout"] == booking_dates["checkout"]
     assert created_booking["booking"]["additionalneeds"] == "Breakfast"
+    assert_matches_schema(created_booking, "CreatedBooking")
 
     booking_client.delete_booking(base_url, created_booking["bookingid"], headers)
 
@@ -121,6 +125,7 @@ def test_update_booking(base_url, auth_token, booking_dates):
     assert updated_booking["bookingdates"]["checkin"] == booking_dates["checkin"]
     assert updated_booking["bookingdates"]["checkout"] == booking_dates["checkout"]
     assert updated_booking["additionalneeds"] == "Dinner"
+    assert_matches_schema(updated_booking, "Booking")
 
     booking_client.delete_booking(base_url, booking_id, headers)
 
@@ -166,6 +171,7 @@ def test_partial_update_booking(base_url, auth_token, booking_dates):
     response = booking_client.partial_update_booking(base_url, booking_id, {"firstname": "Patched"}, headers)
     assert response.status_code == 200
     assert response.json()["firstname"] == "Patched"
+    assert_matches_schema(response.json(), "Booking")
 
     booking_client.delete_booking(base_url, booking_id, headers)
 
