@@ -1,0 +1,314 @@
+openapi: 3.1.2
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: Restful-Booker API (observed behaviour)
+  version: 1.0.0
+  description: >-
+    Describes the actual, verified behaviour of the public Restful-Booker practice API
+    for the endpoints covered by this test suite. Where the API differs from conventional
+    REST behaviour, the operation description says so. See the "Known API Behaviour"
+    section of the repository README.
+servers:
+  - url: https://restful-booker.herokuapp.com
+tags:
+  - name: Auth
+    description: Token creation
+  - name: Booking
+    description: Booking CRUD operations
+paths:
+  /auth:
+    post:
+      tags: [Auth]
+      operationId: createToken
+      summary: Create an auth token
+      description: >-
+        Returns a token to send as the `token` cookie on PUT, PATCH and DELETE requests.
+        Wrong credentials do not return 401; the API returns 200 with a `reason` field
+        and no token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Token created, or credentials rejected with a reason
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AuthToken'
+                  - $ref: '#/components/schemas/AuthFailure'
+  /booking:
+    get:
+      tags: [Booking]
+      operationId: getBookingIds
+      summary: List all booking ids
+      responses:
+        '200':
+          description: All booking ids
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+    post:
+      tags: [Booking]
+      operationId: createBooking
+      summary: Create a booking
+      description: >-
+        No token is needed. A successful create returns 200, not 201. A body without
+        `bookingdates` returns 500 with a plain-text body instead of a 400 validation error.
+        Wrong field types are not rejected when `bookingdates` is present: a non-numeric
+        `totalprice` is saved as null and a non-boolean string `depositpaid` is saved as true.
+        A decimal `totalprice` is saved as an integer (150.5 came back as 150).
+        A request without an Accept header returns 418.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Booking'
+      responses:
+        '200':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedBooking'
+        '418':
+          description: Request sent without an Accept header
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+        '500':
+          description: Request body without `bookingdates`
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+  /booking/{id}:
+    parameters:
+      - $ref: '#/components/parameters/BookingId'
+    get:
+      tags: [Booking]
+      operationId: getBooking
+      summary: Get one booking
+      description: >-
+        A request without an Accept header, or with `Accept: text/plain`, returns 418
+        instead of the booking. Send `Accept: application/json` or `Accept: */*`.
+        Any id that does not exist, including a non-numeric one, returns 404.
+      responses:
+        '200':
+          description: The booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: No booking with this id
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+        '418':
+          description: 'Request sent without an Accept header, or with `Accept: text/plain`'
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+    put:
+      tags: [Booking]
+      operationId: updateBooking
+      summary: Replace a booking
+      description: >-
+        The response body is the bare booking object, without a `bookingid` wrapper.
+        Omitting `additionalneeds` keeps its previous value instead of clearing it.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Booking'
+      responses:
+        '200':
+          description: The updated booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '403':
+          description: Missing or invalid token
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+    patch:
+      tags: [Booking]
+      operationId: partialUpdateBooking
+      summary: Update some fields of a booking
+      description: >-
+        The response body is the full bare booking object after the update. Sending
+        `bookingdates` with only one of its dates replaces the other date with the string
+        `0NaN-aN-aN`.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingPatch'
+      responses:
+        '200':
+          description: The updated booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '403':
+          description: Missing or invalid token
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+    delete:
+      tags: [Booking]
+      operationId: deleteBooking
+      summary: Delete a booking
+      description: >-
+        A successful delete returns 201 with the plain-text body `Created`, not 200 or 204.
+        A later GET for the same id returns 404, and deleting it again returns 405
+        instead of 404.
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          description: Booking deleted
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+        '403':
+          description: Missing or invalid token
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+        '405':
+          description: Booking already deleted
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlainText'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: 'Token returned by POST /auth, sent as `Cookie: token=<token>`.'
+  parameters:
+    BookingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    PlainText:
+      type: string
+    AuthRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    AuthToken:
+      type: object
+      required: [token]
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+          minLength: 1
+    AuthFailure:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+    BookingDates:
+      type: object
+      required: [checkin, checkout]
+      additionalProperties: false
+      properties:
+        checkin:
+          $ref: '#/components/schemas/BookingDate'
+        checkout:
+          $ref: '#/components/schemas/BookingDate'
+    BookingDate:
+      type: string
+      description: >-
+        YYYY-MM-DD. Not enforced as a date, because a PATCH that sends only one date
+        stores the other as `0NaN-aN-aN`.
+    Booking:
+      type: object
+      required: [firstname, lastname, totalprice, depositpaid, bookingdates]
+      additionalProperties: false
+      properties:
+        firstname:
+          type: string
+        lastname:
+          type: string
+        totalprice:
+          type: [integer, 'null']
+          description: Null when a non-numeric value was sent on create.
+        depositpaid:
+          type: boolean
+        bookingdates:
+          $ref: '#/components/schemas/BookingDates'
+        additionalneeds:
+          type: string
+    BookingPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        firstname:
+          type: string
+        lastname:
+          type: string
+        totalprice:
+          type: integer
+        depositpaid:
+          type: boolean
+        bookingdates:
+          $ref: '#/components/schemas/BookingDates'
+        additionalneeds:
+          type: string
+    CreatedBooking:
+      type: object
+      required: [bookingid, booking]
+      additionalProperties: false
+      properties:
+        bookingid:
+          type: integer
+        booking:
+          $ref: '#/components/schemas/Booking'
+    BookingSummary:
+      type: object
+      required: [bookingid]
+      additionalProperties: false
+      properties:
+        bookingid:
+          type: integer
+    BookingList:
+      type: array
+      items:
+        $ref: '#/components/schemas/BookingSummary'
