@@ -1,6 +1,11 @@
-def test_booking_reconciles_with_db(booking, db_conn):
+import booking_client
+
+def test_booking_reconciles_with_db(base_url, booking, db_conn):
     booking_id = booking["id"]
-    api_booking = booking["response"].json()["booking"]
+    response = booking_client.get_booking_by_id(base_url, booking_id)
+    assert response.status_code == 200
+    api_booking = response.json()
+    assert api_booking == booking["response"].json()["booking"]
 
     db_conn.execute(
         "INSERT INTO bookings (id, firstname, lastname, checkin, checkout, totalprice, depositpaid) VALUES (?, ?, ?, ?, ?, ?, ?)",

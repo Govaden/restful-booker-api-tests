@@ -199,7 +199,7 @@ Pure-DB tests against an in-memory SQLite connection (`db_conn` fixture, schema 
 
 | Test | Scenario |
 |---|---|
-| `test_booking_reconciles_with_db` | Creates a booking via the live API, mirrors it into SQLite, and asserts the read-back row matches the API response field-for-field |
+| `test_booking_reconciles_with_db` | Creates a booking via the live API, reads it back with `GET /booking/:id` and checks it equals the create response, mirrors the read-back into SQLite, and asserts the row matches it field-for-field |
 | `test_count_bookings_per_date_range` | `COUNT(*) ... WHERE checkin BETWEEN ? AND ?` against a seeded multi-booking dataset, per month and full range |
 | `test_avg_totalprice` | `AVG(totalprice)` over all seeded bookings |
 | `test_group_by_depositpaid` | `GROUP BY depositpaid` count and average totalprice per group |
