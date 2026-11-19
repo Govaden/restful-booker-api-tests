@@ -1,4 +1,4 @@
-import booking_client
+import pytest
 
 SEED_BOOKINGS = [
     (1, "John",  "Doe",     "2026-01-05", "2026-01-10", 150, 1),
@@ -24,24 +24,13 @@ def seed(conn):
     conn.executemany("INSERT INTO booking_needs (booking_id, need) VALUES (?, ?)", SEED_NEEDS)
     conn.commit()
 
-def test_booking_needs_reconcile_with_db(base_url, auth_token, booking_dates, db_conn):
-    headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
-    booking_data = {
-        "firstname": "Join",
-        "lastname": "Check",
-        "totalprice": 220,
-        "depositpaid": True,
-        "bookingdates": {
-            "checkin": booking_dates["checkin"],
-            "checkout": booking_dates["checkout"]
-        },
-        "additionalneeds": "Breakfast, Late checkout"
-    }
+@pytest.fixture
+def booking_payload(booking_payload):
+    return {**booking_payload, "additionalneeds": "Breakfast, Late checkout"}
 
-    response = booking_client.create_booking(base_url, booking_data, headers)
-    assert response.status_code == 200
-    booking_id = response.json()["bookingid"]
-    api_booking = response.json()["booking"]
+def test_booking_needs_reconcile_with_db(booking, db_conn):
+    booking_id = booking["id"]
+    api_booking = booking["response"].json()["booking"]
     api_needs = [need.strip() for need in api_booking["additionalneeds"].split(",")]
 
     db_conn.execute(
@@ -68,8 +57,6 @@ def test_booking_needs_reconcile_with_db(base_url, auth_token, booking_dates, db
     ).fetchall()
     assert sorted(row["need"] for row in rows) == sorted(api_needs)
     assert sorted(api_needs) == ["Breakfast", "Late checkout"]
-
-    booking_client.delete_booking(base_url, booking_id, headers)
 
 def test_bookings_without_needs(db_conn):
     seed(db_conn)
