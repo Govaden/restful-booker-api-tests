@@ -3,6 +3,9 @@ import requests
 def get_all_bookings(base_url):
     return requests.get(f"{base_url}/booking")
 
+def get_bookings_by_name(base_url, firstname, lastname):
+    return requests.get(f"{base_url}/booking", params={"firstname": firstname, "lastname": lastname})
+
 def get_booking_by_id(base_url, booking_id):
     return requests.get(f"{base_url}/booking/{booking_id}")
 

@@ -1,3 +1,5 @@
+import uuid
+
 import booking_client
 from schema_validation import assert_matches_schema
 
@@ -29,9 +31,12 @@ def test_get_booking_by_id(base_url):
 
 def test_get_bookings_filter_by_name(base_url, auth_token, booking_dates):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
-    booking_client.create_booking(base_url, {
-        "firstname": "Unique",
-        "lastname": "Filterable",
+    suffix = uuid.uuid4().hex[:8]
+    firstname = f"Unique-{suffix}"
+    lastname = f"Filterable-{suffix}"
+    create_response = booking_client.create_booking(base_url, {
+        "firstname": firstname,
+        "lastname": lastname,
         "totalprice": 100,
         "depositpaid": False,
         "bookingdates": {
@@ -40,10 +45,12 @@ def test_get_bookings_filter_by_name(base_url, auth_token, booking_dates):
         },
         "additionalneeds": "None"
     }, headers)
+    assert create_response.status_code == 200
+    booking_id = create_response.json()["bookingid"]
 
-    response = booking_client.get_all_bookings(base_url)
+    response = booking_client.get_bookings_by_name(base_url, firstname, lastname)
     assert response.status_code == 200
-    assert len(response.json()) >= 1
+    assert {"bookingid": booking_id} in response.json()
 
 def test_create_booking(base_url, auth_token, booking_dates):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
