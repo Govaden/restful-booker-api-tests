@@ -193,6 +193,8 @@ Offline tests. No live API calls.
 
 ## Test Coverage — Python (SQLite DB)
 
+The SQLite database is a local mirror. Restful-booker exposes no database, so these tests prove that API responses fit a strict schema and map cleanly to rows (types, constraints, dates). They do not prove server-side persistence. On a real project I would query the service's database with a read-only user after the API call.
+
 Pure-DB tests against an in-memory SQLite connection (`db_conn` fixture, schema from `python/db/schema.sql`). No live API calls except where noted.
 
 | Test | Scenario |
