@@ -14,7 +14,11 @@ def base_url():
 
 @pytest.fixture(scope="session")
 def auth_token(base_url):
-    response = requests.post(f"{base_url}/auth", json={"username": "admin", "password": "password123"})
+    response = booking_client.session.post(
+        f"{base_url}/auth",
+        json={"username": "admin", "password": "password123"},
+        timeout=booking_client.DEFAULT_TIMEOUT
+    )
     assert response.status_code == 200, f"Authentication failed: {response.status_code}"
     token = response.json().get("token")
     assert token, "Token not found in response"
