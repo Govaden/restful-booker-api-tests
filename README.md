@@ -166,7 +166,7 @@ newman run postman/restful-booker-collection.json \
 | `test_create_booking` | POST /booking | Positive |
 | `test_create_booking_invalid_data` | POST /booking | Invalid payload |
 | `test_update_booking` | PUT /booking/:id | Positive |
-| `test_update_booking_invalid_data` | PUT /booking/:id | No auth |
+| `test_update_booking_without_auth` | PUT /booking/:id | No auth |
 | `test_partial_update_booking` | PATCH /booking/:id | Positive |
 | `test_delete_booking` | DELETE /booking/:id | Positive + deletion verification |
 | `test_delete_booking_without_auth` | DELETE /booking/:id | No auth |
@@ -253,8 +253,6 @@ Restful-booker has a few known bugs. Tests assert on what it actually returns, w
 
 | Scenario | Expected | Actual |
 |---|---|---|
-| PUT without auth | 403 | 200 |
-| DELETE without auth | 403 | 201 |
 | POST successful create | 201 | 200 |
 | POST with invalid field types | 400 | 500 |
 | POST /auth with wrong credentials | 401 | 200 with `{"reason": "Bad credentials"}` |

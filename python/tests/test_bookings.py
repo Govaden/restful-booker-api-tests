@@ -129,7 +129,7 @@ def test_update_booking(base_url, auth_token, booking_dates):
 
     booking_client.delete_booking(base_url, booking_id, headers)
 
-def test_update_booking_invalid_data(base_url, auth_token, booking_dates):
+def test_update_booking_without_auth(base_url, auth_token, booking_dates):
     headers = {"Content-Type": "application/json", "Cookie": f"token={auth_token}"}
     booking_data = {
         "firstname": "Test",
@@ -147,8 +147,6 @@ def test_update_booking_invalid_data(base_url, auth_token, booking_dates):
     booking_id = created_booking["bookingid"]
 
     response = booking_client.update_booking(base_url, booking_id, booking_data, headers=None)
-    # restful-booker known bug: PUT without auth returns 200 instead of 403.
-    # A production API should enforce authentication and return 403 here.
     assert response.status_code == 403
 
     booking_client.delete_booking(base_url, booking_id, headers)
@@ -215,8 +213,6 @@ def test_delete_booking_without_auth(base_url, auth_token, booking_dates):
     created_booking = booking_client.create_booking(base_url, booking_data, headers).json()
     booking_id = created_booking["bookingid"]
     response = booking_client.delete_booking(base_url, booking_id, headers=None)
-    # restful-booker known bug: DELETE without auth returns 201 instead of 403.
-    # A production API should enforce authentication and return 403 here.
     assert response.status_code == 403
 
     booking_client.delete_booking(base_url, booking_id, headers)
